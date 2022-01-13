@@ -22,7 +22,42 @@ class _TimelineState extends State<Timeline> {
   void initState() {
     // getUsers();
     // getUserById();
+    // createUser();
+    // updateUser();
+    // deleteUser();
     super.initState();
+  }
+
+  void createUser() {
+    usersRef.doc('aklejf932ld90l').set({
+      'userName': 'Zoltan',
+      'isAdmin': false,
+      'postsCount': 0,
+    });
+  }
+
+  void updateUser() async {
+    final doc = await usersRef
+        .doc('aklejf932ld90l')
+        // .update({
+        //   'userName': 'Zlob',
+        // });
+        .get();
+    if (doc.exists) {
+      doc.reference.update({
+        'userName': 'Zlob',
+      });
+    }
+  }
+
+  void deleteUser() async {
+    final doc = await usersRef
+        .doc('aklejf932ld90l')
+        // .delete();
+        .get();
+    if (doc.exists) {
+      doc.reference.delete();
+    }
   }
 
   // void getUsers() async {
