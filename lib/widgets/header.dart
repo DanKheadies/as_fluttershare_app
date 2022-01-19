@@ -4,8 +4,10 @@ AppBar header(
   BuildContext context, {
   bool isAppTitle = false,
   String titleText = '',
+  removeBackButton = false,
 }) {
   return AppBar(
+    automaticallyImplyLeading: removeBackButton ? false : true,
     title: Text(
       isAppTitle ? 'FlutterShare' : titleText,
       style: TextStyle(
@@ -13,6 +15,7 @@ AppBar header(
         fontFamily: isAppTitle ? 'Signatra' : '',
         fontSize: isAppTitle ? 50 : 22,
       ),
+      overflow: TextOverflow.ellipsis,
     ),
     centerTitle: true,
     backgroundColor: Theme.of(context).colorScheme.secondary,

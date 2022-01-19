@@ -1,107 +1,146 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
+import './home.dart';
+import './search.dart';
+import '../models/user.dart';
 import '../widgets/header.dart';
+import '../widgets/post.dart';
 import '../widgets/progress.dart';
 
-final usersRef = FirebaseFirestore.instance.collection('users');
-
 class Timeline extends StatefulWidget {
-  const Timeline({Key? key}) : super(key: key);
+  const Timeline({
+    Key? key,
+    required this.currentUser,
+  }) : super(key: key);
+
+  final User currentUser;
 
   @override
   _TimelineState createState() => _TimelineState();
 }
 
 class _TimelineState extends State<Timeline> {
-  // List<dynamic> users = [];
-  // final usersRef = FirebaseFirestore.instance.collection('users');
+  bool gettingData = false;
+  List<Post> posts = [];
+  List<String> followingList = [];
 
   @override
   void initState() {
-    // getUsers();
-    // getUserById();
-    // createUser();
-    // updateUser();
-    // deleteUser();
+    setState(() {
+      gettingData = true;
+    });
+    getTimeline();
+    getFollowing();
     super.initState();
   }
 
-  void createUser() {
-    usersRef.doc('aklejf932ld90l').set({
-      'userName': 'Zoltan',
-      'isAdmin': false,
-      'postsCount': 0,
+  Future<void> getTimeline() async {
+    QuerySnapshot snapshot = await timelineRef
+        .doc(currentUser.id)
+        .collection('timelinePosts')
+        .orderBy(
+          'timestamp',
+          descending: true,
+        )
+        .get();
+
+    List<Post> _posts =
+        snapshot.docs.map((doc) => Post.fromDocument(doc)).toList();
+
+    setState(() {
+      posts = _posts;
+      gettingData = false;
     });
   }
 
-  void updateUser() async {
-    final doc = await usersRef
-        .doc('aklejf932ld90l')
-        // .update({
-        //   'userName': 'Zlob',
-        // });
+  Future<void> getFollowing() async {
+    QuerySnapshot snapshot = await followingRef
+        .doc(currentUser.id)
+        .collection('userFollowing')
         .get();
-    if (doc.exists) {
-      doc.reference.update({
-        'userName': 'Zlob',
-      });
+
+    List<String> _followingList = snapshot.docs.map((doc) => doc.id).toList();
+
+    setState(() {
+      followingList = _followingList;
+      gettingData = false;
+    });
+  }
+
+  Widget buildTimeline() {
+    if (gettingData) {
+      return circularProgress();
+    } else if (posts.isEmpty) {
+      return buildUsersToFollow();
+    } else {
+      return ListView(
+        children: posts,
+      );
     }
   }
 
-  void deleteUser() async {
-    final doc = await usersRef
-        .doc('aklejf932ld90l')
-        // .delete();
-        .get();
-    if (doc.exists) {
-      doc.reference.delete();
-    }
+  Widget buildUsersToFollow() {
+    return StreamBuilder<QuerySnapshot>(
+      stream:
+          usersRef.orderBy('timestamp', descending: true).limit(30).snapshots(),
+      builder: (context, snapshot) {
+        print('build');
+        if (!snapshot.hasData) {
+          return circularProgress();
+        }
+
+        List<UserResult> userResults = [];
+        for (var doc in snapshot.data!.docs) {
+          User user = User.fromDocument(doc);
+          final bool isAuthUser = currentUser.id == user.id;
+          final bool isFollowingUser = followingList.contains(user.id);
+
+          if (isAuthUser) {
+            // print('is auth user');
+          } else if (isFollowingUser) {
+            // print('is following user');
+          } else {
+            UserResult userResult = UserResult(user);
+            userResults.add(userResult);
+          }
+        }
+        return Container(
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.person_add,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 30,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Users to Follow',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 30,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                children: userResults,
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
-
-  // void getUsers() async {
-  //   final QuerySnapshot snapshot = await usersRef
-  //       // .where(
-  //       //   'isAdmin',
-  //       //   isEqualTo: false,
-  //       // )
-  //       // .where(
-  //       //   'postsCount',
-  //       //   isGreaterThan: 10,
-  //       // )
-  //       // .orderBy(
-  //       //   'postsCount',
-  //       //   descending: true,
-  //       // )
-  //       // .limit(1)
-  //       .get();
-
-  //   setState(() {
-  //     users = snapshot.docs;
-  //   });
-  //   // snapshot.docs.forEach((DocumentSnapshot doc) {
-  //   //   print(doc.data());
-  //   //   print(doc.id);
-  //   //   print(doc.exists);
-  //   // });
-
-  //   // usersRef.get().then((QuerySnapshot snapshot) {
-  //   //   snapshot.docs.forEach((DocumentSnapshot doc) {
-  //   //     print(doc.data());
-  //   //     print(doc.id);
-  //   //     print(doc.exists);
-  //   //   });
-  //   // });
-  // }
-
-  // void getUserById() async {
-  //   const String id = '0OCE6nJfmFu9620ZnaNM';
-  //   final DocumentSnapshot doc = await usersRef.doc(id).get();
-  //   print(doc.data());
-  //   print(doc.id);
-  //   print(doc.exists);
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -110,28 +149,33 @@ class _TimelineState extends State<Timeline> {
         context,
         isAppTitle: true,
       ),
-      // body: FutureBuilder<QuerySnapshot>(
-      body: StreamBuilder<QuerySnapshot>(
-        // future: usersRef.get(),
-        stream: usersRef.snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return circularProgress();
-          }
-          final List<Text> children = snapshot.data!.docs
-              .map(
-                (doc) => Text(
-                  doc['userName'],
-                ),
-              )
-              .toList();
-          return Container(
-            child: ListView(
-              children: children,
-            ),
-          );
-        },
+      // body: const SizedBox(),
+      body: RefreshIndicator(
+        onRefresh: () => getTimeline(),
+        child: buildTimeline(),
       ),
+      // body: FutureBuilder<QuerySnapshot>(
+      // body: StreamBuilder<QuerySnapshot>(
+      //   // future: usersRef.get(),
+      //   stream: usersRef.snapshots(),
+      //   builder: (context, snapshot) {
+      //     if (!snapshot.hasData) {
+      //       return circularProgress();
+      //     }
+      //     final List<Text> children = snapshot.data!.docs
+      //         .map(
+      //           (doc) => Text(
+      //             doc['userName'],
+      //           ),
+      //         )
+      //         .toList();
+      //     return Container(
+      //       child: ListView(
+      //         children: children,
+      //       ),
+      //     );
+      //   },
+      // ),
     );
   }
 }

@@ -37,9 +37,11 @@ dependencies:
   firebase_messaging: ^11.2.4
   firebase_storage: ^10.2.4
   flutter_svg: ^1.0.0
+  geocoding: ^2.0.2
   geolocator: ^8.0.1
   google_sign_in: ^5.2.1
   image: ^3.1.0
+  image_picker: ^0.8.4+4
   path_provider: ^2.0.8
   timeago: ^3.1.0
   uuid: ^3.0.5
