@@ -114,7 +114,7 @@ exports.onUpdatePost = functions.firestore
         .firestore()
         .collection('timeline')
         .doc(followerId)
-        .collection('timelinePOsts')
+        .collection('timelinePosts')
         .doc(postId)
         .get()
         .then(doc => {
@@ -155,3 +155,59 @@ exports.onDeletePost = functions.firestore
         });
     });
 }); 
+
+exports.onCreateActivityFeedItem = functions.firestore
+  .document('/feed/{userId}/feedItems/{activityFeedItem}')
+  .onCreate(async (snapshot, context) => {
+    console.log('Activity Feed Item Created', snapshot.data());
+
+    const userId = context.params.userId;
+    const userRef = admin.firestore().doc(`users/${userId}`);
+    const doc = await userRef.get();
+
+    const androidNotificationToken = doc.data().androidNotificationToken;
+    const activityFeedItem = snapshot.data();
+    
+    if (androidNotificationToken) {
+      sendNotification(androidNotificationToken, activityFeedItem);
+    } else {
+      console.log('No token for user, cannot send notification.');
+    }
+
+    function sendNotification(androidNotificationToken, activityFeedItem) {
+      let body;
+
+      switch (activityFeedItem.type) {
+        case 'comment':
+          body = `${activityFeedItem.username} replied: ${activityFeedItem.commentData}`;
+          break;
+
+        case 'like':
+          body = `${activityFeedItem.username} liked your post.`;
+          break;
+
+        case 'follow':
+          body = `${activityFeedItem.username} started following you.`;
+          break;
+
+        default:
+          break;
+      }
+
+      const message = {
+        notification: { body },
+        token: androidNotificationToken,
+        data: { recipient: userId }
+      };
+
+      admin
+        .messaging()
+        .send(message)
+        .then(response => {
+          console.log('Successfully sent message', response);
+        })
+        .catch(error => {
+          console.log('Error sending message.', error);
+        });
+    }
+});

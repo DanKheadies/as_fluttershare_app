@@ -37,7 +37,6 @@ class _ProfileState extends State<Profile> {
 
   @override
   void initState() {
-    print('profile init');
     super.initState();
     getProfilePosts();
     getFollowers();

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -27,13 +30,14 @@ final DateTime timestamp = DateTime.now();
 late User currentUser;
 
 // TODOS:
-// Activity Feed linking -> navigating to post
 // Deleting a Post & removing the 'Back' button
 // Refresthing a Screen:
 //  - Activity Feed after (un)following someone (and going back)
-//  - Updating
+//  - Deleting a post (see above)
+//  - Pulling down user profile
 // Showing Comment count (on post)
 // Log out -> Log in tab selected icon
+// Disable Post button while uploading (and get location and editing text)
 
 class Home extends StatefulWidget {
   static const String id = 'home';
@@ -46,11 +50,14 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   bool isAuth = false;
+  bool isSignedIn = false;
   int pageIndex = 0;
+  late FirebaseMessaging _firebaseMessaging;
   late PageController pageController;
 
   @override
   void initState() {
+    print('init');
     pageController = PageController();
     currentUser = User(
       id: '',
@@ -61,24 +68,29 @@ class _HomeState extends State<Home> {
       bio: '',
     );
 
-    // Detects when user signed in
-    googleSignIn.onCurrentUserChanged.listen((account) {
-      handleSignIn(account);
-    }, onError: (err) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error signing in: $err'),
-          backgroundColor: Theme.of(context).errorColor,
-        ),
-      );
-    });
+    firebaseMessagesSetup();
 
-    // Reauthenticate user when app is opened
-    googleSignIn.signInSilently(suppressErrors: false).then((account) {
-      handleSignIn(account);
-    }).catchError((err) {
-      print('Error signing in: $err');
-    });
+    if (!isAuth) {
+      googleSignIn.signInSilently(suppressErrors: false).then((account) {
+        handleSignIn(account);
+      }).catchError((err) {
+        print('Error signing in: $err');
+      });
+    }
+
+    if (!isAuth) {
+      googleSignIn.onCurrentUserChanged.listen((account) {
+        handleSignIn(account);
+      }, onError: (err) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error signing in: $err'),
+            backgroundColor: Theme.of(context).errorColor,
+          ),
+        );
+      });
+    }
+
     super.initState();
   }
 
@@ -86,6 +98,54 @@ class _HomeState extends State<Home> {
   void dispose() {
     pageController.dispose();
     super.dispose();
+  }
+
+  void firebaseMessagesSetup() {
+    _firebaseMessaging = FirebaseMessaging.instance;
+
+    FirebaseMessaging.onMessage.listen((message) {
+      // print('message received');
+      // print(message.notification!.body);
+      // showDialog(
+      //     context: context,
+      //     builder: (BuildContext context) {
+      //       return AlertDialog(
+      //         title: const Text("Notification"),
+      //         content: Text(message.notification!.body!),
+      //         actions: [
+      //           TextButton(
+      //             child: const Text("Ok"),
+      //             onPressed: () {
+      //               Navigator.of(context).pop();
+      //             },
+      //           )
+      //         ],
+      //       );
+      //     });
+      print('on message: $message\n');
+      final String receipientId = message.data['recipient'];
+      final String? body = message.notification!.body;
+      print(receipientId);
+      print(currentUser.id);
+      if (receipientId == currentUser.id) {
+        print('Notification shown!');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              body!,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      } else {
+        print('Notification NOT shown.');
+      }
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      print('message clicked!');
+    });
+
+    if (Platform.isIOS) getiOSPermission();
   }
 
   handleSignIn(GoogleSignInAccount? account) async {
@@ -100,6 +160,45 @@ class _HomeState extends State<Home> {
         isAuth = false;
       });
     }
+  }
+
+  // configurePushNotifications() async {
+  //   final GoogleSignInAccount? user = googleSignIn.currentUser;
+  //   if (Platform.isIOS) getiOSPermission();
+
+  //   _firebaseMessaging.getToken().then((token) {
+  //     print('Firebase Messaging Token: $token\n');
+  //     usersRef.doc(user!.id).update({'androidNotificationToken': token});
+  //   });
+
+  //   FirebaseMessaging.onMessage.listen((message) {
+  //     print('on message: $message\n');
+  //     final String receipientId = message.data['recipient'];
+  //     final String? body = message.notification!.body;
+  //     print(receipientId);
+  //     print(currentUser.id);
+  //     if (receipientId == currentUser.id) {
+  //       print('Notification shown!');
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(
+  //             body!,
+  //             overflow: TextOverflow.ellipsis,
+  //           ),
+  //         ),
+  //       );
+  //     } else {
+  //       print('Notification NOT shown.');
+  //     }
+  //   });
+  // }
+
+  getiOSPermission() {
+    _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   Future<void> createUserInFirebase() async {
@@ -135,15 +234,20 @@ class _HomeState extends State<Home> {
     }
 
     currentUser = User.fromDocument(doc);
+
+    _firebaseMessaging.getToken().then((token) {
+      print('Firebase Messaging Token: $token\n');
+      usersRef.doc(user!.id).update({'androidNotificationToken': token});
+    });
+    _firebaseMessaging.onTokenRefresh.listen((token) {
+      print('NEW Firebase Messaging Token: $token\n');
+      usersRef.doc(user!.id).update({'androidNotificationToken': token});
+    });
   }
 
   void login() {
     googleSignIn.signIn();
   }
-
-  // void logout() {
-  //   googleSignIn.signOut();
-  // }
 
   void onPageChanged(int pageIndex) {
     setState(() {

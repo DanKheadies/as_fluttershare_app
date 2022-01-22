@@ -1,17 +1,17 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:animator/animator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import './progress.dart';
-// import '../models/post.dart';
 import '../models/user.dart';
 import '../screens/comments.dart';
 import '../screens/home.dart';
 import '../screens/profile.dart';
-import '../screens/activity_feed.dart';
 import '../widgets/custom_image.dart';
 
 class Post extends StatefulWidget {
@@ -35,11 +35,6 @@ class Post extends StatefulWidget {
   final dynamic likes;
 
   factory Post.fromDocument(DocumentSnapshot doc) {
-    print('yo');
-    if (doc['postId'] == null) {
-      print(doc['lo']);
-    }
-    print(doc['ownerId']);
     return Post(
       postId: doc['postId'],
       ownerId: doc['ownerId'],
@@ -85,7 +80,6 @@ class _PostState extends State<Post> {
 
   @override
   void initState() {
-    print('post init');
     setState(() {
       currentUserId = currentUser.id;
       postId = widget.postId;
@@ -111,7 +105,6 @@ class _PostState extends State<Post> {
         ),
       ),
     ).then((value) => setState(() {}));
-    print('post derp');
   }
 
   FutureBuilder buildPostHeader() {
@@ -133,19 +126,6 @@ class _PostState extends State<Post> {
               context,
               profileId: user.id,
             ),
-            // onTap: () => ActivityFeedItem(
-            //   commentData: '',
-            //   mediaUrl: '',
-            //   postId: '',
-            //   timestamp: Timestamp.now(),
-            //   type: '',
-            //   userId: user.id,
-            //   userProfileImg: '',
-            //   username: '',
-            // ).showProfile(
-            //   context,
-            //   profileId: user.id,
-            // ),
             child: Text(
               user.username,
               style: const TextStyle(
@@ -172,10 +152,10 @@ class _PostState extends State<Post> {
     return showDialog(
       context: parentContext,
       builder: (context) {
-        return SimpleDialog(
+        return AlertDialog(
           title: const Text('Remove this post?'),
-          children: [
-            SimpleDialogOption(
+          actions: [
+            TextButton(
               child: const Text(
                 'Delete',
                 style: TextStyle(
@@ -184,19 +164,52 @@ class _PostState extends State<Post> {
               ),
               onPressed: () {
                 deletePost();
-                Navigator.pushReplacementNamed(
-                  context,
-                  // Profile.id,
-                  Home.id,
-                ).then((val) => setState(() {}));
+                // Navigator.pushReplacementNamed(
+                //   context,
+                //   Home.id,
+                // );
+                Navigator.pop(context);
+                // Navigator.pop(context, true);
               },
             ),
-            SimpleDialogOption(
-              child: const Text('Cancel'),
+            TextButton(
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
               onPressed: () => Navigator.pop(context),
             ),
           ],
         );
+        // return SimpleDialog(
+        //   title: const Text('Remove this post?'),
+        //   children: [
+        //     SimpleDialogOption(
+        //       child: const Text(
+        //         'Delete',
+        //         style: TextStyle(
+        //           color: Colors.red,
+        //         ),
+        //       ),
+        //       onPressed: () {
+        //         deletePost();
+        //         // Navigator.pushReplacementNamed(
+        //         //   context,
+        //         //   // Profile.id,
+        //         //   Home.id,
+        //         // ).then((val) => setState(() {}));
+        //         Navigator.pop(context);
+        //         Navigator.pop(context, true);
+        //       },
+        //     ),
+        //     SimpleDialogOption(
+        //       child: const Text('Cancel'),
+        //       onPressed: () => Navigator.pop(context),
+        //     ),
+        //   ],
+        // );
       },
     );
   }
@@ -275,35 +288,36 @@ class _PostState extends State<Post> {
 
   void addLikeToActivityFeed() {
     bool isNotPostOwner = currentUserId != ownerId;
-    if (isNotPostOwner) {
-      activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
-        'commentData': '',
-        'mediaUrl': mediaUrl,
-        'ownerId': '',
-        'postId': postId,
-        'timestamp': timestamp,
-        'type': 'like',
-        'userId': currentUser.id,
-        'userProfileImg': currentUser.photoUrl,
-        'username': currentUser.username,
-      });
-    }
+    // if (isNotPostOwner) {
+    print('like');
+    activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
+      'commentData': '',
+      'mediaUrl': mediaUrl,
+      'ownerId': ownerId,
+      'postId': postId,
+      'timestamp': timestamp,
+      'type': 'like',
+      'userId': currentUser.id,
+      'userProfileImg': currentUser.photoUrl,
+      'username': currentUser.username,
+    });
+    // }
   }
 
   void removeLikeFromActivityFeed() {
     bool isNotPostOwner = currentUserId != ownerId;
-    if (isNotPostOwner) {
-      activityFeedRef
-          .doc(ownerId)
-          .collection('feedItems')
-          .doc(postId)
-          .get()
-          .then((doc) {
-        if (doc.exists) {
-          doc.reference.delete();
-        }
-      });
-    }
+    // if (isNotPostOwner) {
+    activityFeedRef
+        .doc(ownerId)
+        .collection('feedItems')
+        .doc(postId)
+        .get()
+        .then((doc) {
+      if (doc.exists) {
+        doc.reference.delete();
+      }
+    });
+    // }
   }
 
   GestureDetector buildPostImage() {

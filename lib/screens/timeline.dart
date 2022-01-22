@@ -87,7 +87,6 @@ class _TimelineState extends State<Timeline> {
       stream:
           usersRef.orderBy('timestamp', descending: true).limit(30).snapshots(),
       builder: (context, snapshot) {
-        print('build');
         if (!snapshot.hasData) {
           return circularProgress();
         }
@@ -149,33 +148,10 @@ class _TimelineState extends State<Timeline> {
         context,
         isAppTitle: true,
       ),
-      // body: const SizedBox(),
       body: RefreshIndicator(
         onRefresh: () => getTimeline(),
         child: buildTimeline(),
       ),
-      // body: FutureBuilder<QuerySnapshot>(
-      // body: StreamBuilder<QuerySnapshot>(
-      //   // future: usersRef.get(),
-      //   stream: usersRef.snapshots(),
-      //   builder: (context, snapshot) {
-      //     if (!snapshot.hasData) {
-      //       return circularProgress();
-      //     }
-      //     final List<Text> children = snapshot.data!.docs
-      //         .map(
-      //           (doc) => Text(
-      //             doc['userName'],
-      //           ),
-      //         )
-      //         .toList();
-      //     return Container(
-      //       child: ListView(
-      //         children: children,
-      //       ),
-      //     );
-      //   },
-      // ),
     );
   }
 }

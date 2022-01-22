@@ -74,11 +74,10 @@ class _CommentsState extends State<Comments> {
     });
     bool isNotPostOwner = postOwnerId != currentUser.id;
     if (isNotPostOwner) {
-      print('daco');
       activityFeedRef.doc(postOwnerId).collection('feedItems').add({
         'commentData': commentController.text,
         'mediaUrl': postMediaUrl,
-        'ownerId': '',
+        'ownerId': postOwnerId,
         'postId': postId,
         'timestamp': timestamp,
         'type': 'comment',
@@ -162,7 +161,7 @@ class Comment extends StatelessWidget {
             ),
           ),
         ),
-        Divider(),
+        const Divider(),
       ],
     );
   }

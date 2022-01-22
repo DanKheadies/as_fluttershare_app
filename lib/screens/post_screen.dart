@@ -18,25 +18,13 @@ class PostScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('post screen');
-    print(userId);
-    print(postId);
     return FutureBuilder<DocumentSnapshot>(
       future: postsRef.doc(userId).collection('userPosts').doc(postId).get(),
       builder: (context, snapshot) {
-        print('post screen builder');
         if (!snapshot.hasData) {
           return circularProgress();
         }
         Post post = Post.fromDocument(snapshot.data!);
-        print(post);
-        print(post.description);
-        print(post.likes);
-        print(post.location);
-        print(post.mediaUrl);
-        print(post.ownerId);
-        print(post.postId);
-        print(post.username);
         return Center(
           child: Scaffold(
             appBar: header(

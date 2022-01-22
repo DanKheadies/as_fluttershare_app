@@ -73,6 +73,7 @@ class ActivityFeedItem extends StatefulWidget {
     Key? key,
     required this.username,
     required this.userId,
+    required this.ownerId,
     required this.type,
     required this.mediaUrl,
     required this.postId,
@@ -83,6 +84,7 @@ class ActivityFeedItem extends StatefulWidget {
 
   final String username;
   final String userId;
+  final String ownerId;
   final String type;
   final String mediaUrl;
   final String postId;
@@ -94,6 +96,7 @@ class ActivityFeedItem extends StatefulWidget {
     return ActivityFeedItem(
       username: doc['username'],
       userId: doc['userId'],
+      ownerId: doc['ownerId'],
       type: doc['type'],
       mediaUrl: doc['mediaUrl'],
       postId: doc['postId'],
@@ -102,20 +105,6 @@ class ActivityFeedItem extends StatefulWidget {
       timestamp: doc['timestamp'],
     );
   }
-
-  // Future<void> showProfile(BuildContext context,
-  //     {required String profileId}) async {
-  //   final derp = await Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => Profile(
-  //         profileId: profileId,
-  //       ),
-  //     ),
-  //   );
-  //   print('derp');
-  //   print(derp);
-  // }
 
   @override
   State<ActivityFeedItem> createState() => _ActivityFeedItemState();
@@ -134,19 +123,6 @@ class _ActivityFeedItemState extends State<ActivityFeedItem> {
     super.initState();
   }
 
-  // Future<void> showProfile(BuildContext context,
-  //     {required String profileId}) async {
-  //   final derp = await Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => Profile(
-  //         profileId: profileId,
-  //       ),
-  //     ),
-  //   );
-  //   print('af derp');
-  //   print(derp);
-  // }
   void showProfile(BuildContext context, {required String profileId}) {
     Navigator.push(
       context,
@@ -156,19 +132,15 @@ class _ActivityFeedItemState extends State<ActivityFeedItem> {
         ),
       ),
     ).then((value) => setState(() {}));
-    print('af derp');
   }
 
   void showPost(context) {
-    print('show post');
-    print(widget.postId);
-    print(widget.userId);
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PostScreen(
           postId: widget.postId,
-          userId: widget.userId,
+          userId: widget.ownerId,
         ),
       ),
     ).then((val) => setState(() {}));
@@ -219,28 +191,16 @@ class _ActivityFeedItemState extends State<ActivityFeedItem> {
     }
   }
 
-  // Future showProfile(BuildContext context, {required String profileId}) async {
-  //   final derp = await Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => Profile(
-  //         profileId: profileId,
-  //       ),
-  //     ),
-  //   );
-  //   print(derp);
-  // }
-
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Container(
-        color: Colors.white54,
-        child: ListTile(
-          title: GestureDetector(
-            onTap: widget.type != 'follow' ? () => showPost(context) : () {},
-            child: RichText(
+    return GestureDetector(
+      onTap: widget.type != 'follow' ? () => showPost(context) : () {},
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 2),
+        child: Container(
+          color: Colors.white54,
+          child: ListTile(
+            title: RichText(
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
                 style: const TextStyle(
@@ -260,36 +220,24 @@ class _ActivityFeedItemState extends State<ActivityFeedItem> {
                 ],
               ),
             ),
-          ),
-          leading: GestureDetector(
-            onTap: () => showProfile(
-              context,
-              profileId: widget.userId,
+            leading: GestureDetector(
+              onTap: () => showProfile(
+                context,
+                profileId: widget.userId,
+              ),
+              child: CircleAvatar(
+                backgroundImage:
+                    CachedNetworkImageProvider(widget.userProfileImg),
+              ),
             ),
-            child: CircleAvatar(
-              backgroundImage:
-                  CachedNetworkImageProvider(widget.userProfileImg),
+            subtitle: Text(
+              timeago.format(widget.timestamp.toDate()),
+              overflow: TextOverflow.ellipsis,
             ),
+            trailing: configureMediaPreview(),
           ),
-          subtitle: Text(
-            timeago.format(widget.timestamp.toDate()),
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: configureMediaPreview(),
         ),
       ),
     );
   }
 }
-
-// showProfile(BuildContext context, {required String profileId}) async {
-//   final derp = await Navigator.push(
-//     context,
-//     MaterialPageRoute(
-//       builder: (context) => Profile(
-//         profileId: profileId,
-//       ),
-//     ),
-//   );
-//   print(derp);
-// }
