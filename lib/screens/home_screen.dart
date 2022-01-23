@@ -8,7 +8,7 @@ import '../widgets/auth.dart';
 import '../widgets/unAuth.dart';
 
 // TODOS:
-// Push notifications on iOS
+// Clean up notifications (on tap?)
 // Clean up Search / Firebase query
 // Infinite Profile -> Post -> Profile -> blackhole
 
