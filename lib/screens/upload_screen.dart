@@ -220,10 +220,6 @@ class _UploadScreenState extends State<UploadScreen>
     //   Permission.location.request();
     // }
 
-    // if (status.isGranted || status.isLimited) {
-    //   print('g2g');
-    // }
-
     _geolocatorPlatform.requestPermission();
 
     // Test if location services are enabled.
@@ -276,7 +272,6 @@ class _UploadScreenState extends State<UploadScreen>
   }
 
   void getUserLocation() async {
-    print('getting location');
     bool permissionEnabled = await getLocationPermissions();
 
     if (!permissionEnabled) {

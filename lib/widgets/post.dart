@@ -284,7 +284,6 @@ class _PostState extends State<Post> {
   void addLikeToActivityFeed() {
     bool isNotPostOwner = currentUserId != ownerId;
     if (isNotPostOwner) {
-      print('like');
       activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
         'commentData': '',
         'mediaUrl': mediaUrl,

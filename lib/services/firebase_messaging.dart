@@ -40,7 +40,7 @@ void firebaseMessagesSetup(
     // print(values);
     // print(currentUser.id);
     if (receipientId == currentUser.id) {
-      print('Notification shown!');
+      // print('Notification shown!');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -49,13 +49,15 @@ void firebaseMessagesSetup(
           ),
         ),
       );
-    } else {
-      print('Notification NOT shown.');
+      // } else {
+      //   print('Notification NOT shown.');
     }
   });
-  FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    print('message clicked!');
-  });
+
+  // TODO
+  // FirebaseMessaging.onMessageOpenedApp.listen((message) {
+  //   // print('message clicked!');
+  // });
 
   // _firebaseMessaging.subscribeToTopic(topic)
 
@@ -71,15 +73,15 @@ Future<void> getiOSPermission(
     sound: true,
   );
 
-  NotificationSettings settings = await _firebaseMessaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
+  // NotificationSettings settings = await _firebaseMessaging.requestPermission(
+  //   alert: true,
+  //   announcement: false,
+  //   badge: true,
+  //   carPlay: false,
+  //   criticalAlert: false,
+  //   provisional: false,
+  //   sound: true,
+  // );
 
   // if (settings.authorizationStatus == AuthorizationStatus.authorized) {
   //   print('User granted permission');
@@ -90,6 +92,7 @@ Future<void> getiOSPermission(
   // }
 }
 
+// TODO
 Future<void> handleBackgroundMessage(RemoteMessage message) async {
-  print('background message ${message.notification!.body}');
+  // print('background message ${message.notification!.body}');
 }
