@@ -2,13 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import './home.dart';
-import './profile.dart';
+import './profile_screen.dart';
 import '../models/user.dart';
+import '../services/firebase_firestore.dart';
+import '../services/google_signin.dart';
 import '../widgets/progress.dart';
 
-class EditProfile extends StatefulWidget {
-  const EditProfile({
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({
     Key? key,
     required this.currentUserId,
   }) : super(key: key);
@@ -16,10 +17,10 @@ class EditProfile extends StatefulWidget {
   final String currentUserId;
 
   @override
-  _EditProfileState createState() => _EditProfileState();
+  _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 
-class _EditProfileState extends State<EditProfile> {
+class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _bioValid = true;
   bool _displayNameValid = true;
   bool isLoading = false;
@@ -120,22 +121,6 @@ class _EditProfileState extends State<EditProfile> {
   void logout() async {
     await googleSignIn.signOut();
     Navigator.pop(context);
-    // Navigator.pop(context, 0);
-    // Navigator.pushReplacementNamed(
-    //   context,
-    //   Home.id,
-    // );
-    // Navigator.pushNamedAndRemoveUntil(
-    //   context,
-    //   Home.id,
-    //   (route) => false,
-    // );
-    // Navigator.of(context).pushReplacementNamed(Home.id);
-    // Navigator.pushNamedAndRemoveUntil(
-    //   context,
-    //   Home.id,
-    //   ModalRoute.withName('//'),
-    // );
   }
 
   @override
@@ -152,15 +137,14 @@ class _EditProfileState extends State<EditProfile> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios,
-            // size: 30,
             color: Colors.black,
           ),
-          // onPressed: () => Navigator.pop(context),
           onPressed: () => Navigator.pop(
             context,
             MaterialPageRoute(
-              builder: (context) => Profile(
+              builder: (context) => ProfileScreen(
                 profileId: widget.currentUserId,
+                hasBack: false,
               ),
             ),
           ),

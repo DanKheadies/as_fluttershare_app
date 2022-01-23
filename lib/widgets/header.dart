@@ -4,7 +4,9 @@ AppBar header(
   BuildContext context, {
   bool isAppTitle = false,
   String titleText = '',
-  removeBackButton = false,
+  bool removeBackButton = false,
+  bool hasLeading = false,
+  String leadingParam = '',
 }) {
   return AppBar(
     automaticallyImplyLeading: removeBackButton ? false : true,
@@ -17,6 +19,14 @@ AppBar header(
       ),
       overflow: TextOverflow.ellipsis,
     ),
+    leading: hasLeading
+        ? IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () {
+              Navigator.pop(context, leadingParam);
+            },
+          )
+        : const SizedBox(),
     centerTitle: true,
     backgroundColor: Theme.of(context).colorScheme.secondary,
   );

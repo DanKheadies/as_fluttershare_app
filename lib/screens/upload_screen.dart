@@ -12,11 +12,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import './home.dart';
 import '../models/user.dart';
+import '../services/firebase_firestore.dart';
+import '../widgets/progress.dart';
 
-class Upload extends StatefulWidget {
-  const Upload({
+class UploadScreen extends StatefulWidget {
+  const UploadScreen({
     Key? key,
     required this.currentUser,
   }) : super(key: key);
@@ -24,12 +25,14 @@ class Upload extends StatefulWidget {
   final User currentUser;
 
   @override
-  _UploadState createState() => _UploadState();
+  _UploadScreenState createState() => _UploadScreenState();
 }
 
-class _UploadState extends State<Upload>
-    with AutomaticKeepAliveClientMixin<Upload> {
+class _UploadScreenState extends State<UploadScreen>
+    with AutomaticKeepAliveClientMixin<UploadScreen> {
+  bool gettingLocation = false;
   bool isUploading = false;
+  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   String postId = const Uuid().v4();
   TextEditingController captionController = TextEditingController();
   TextEditingController locationController = TextEditingController();
@@ -55,9 +58,6 @@ class _UploadState extends State<Upload>
     if (file == null) {
       return;
     }
-    // print(file);
-    // print(file!.name);
-    // print(file.path);
     setState(() {
       this.file = file;
     });
@@ -166,7 +166,7 @@ class _UploadState extends State<Upload>
           'mediaUrl': mediaUrl,
           'description': description,
           'location': location,
-          'timestamp': timestamp,
+          'timestamp': getNow(),
           'likes': {},
         })
         .whenComplete(
@@ -215,8 +215,19 @@ class _UploadState extends State<Upload>
     bool serviceEnabled;
     LocationPermission permission;
 
+    // var status = await Permission.location.status;
+    // if (status.isDenied || status.isPermanentlyDenied || status.isRestricted) {
+    //   Permission.location.request();
+    // }
+
+    // if (status.isGranted || status.isLimited) {
+    //   print('g2g');
+    // }
+
+    _geolocatorPlatform.requestPermission();
+
     // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
 
     if (!serviceEnabled) {
       // Location services are not enabled don't continue
@@ -224,14 +235,15 @@ class _UploadState extends State<Upload>
       // App to enable the location services.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Location services are disabled.'),
+          content: const Text(
+              'Location services are disabled. Allow and try again.'),
           backgroundColor: Theme.of(context).errorColor,
         ),
       );
       return false;
     }
 
-    permission = await Geolocator.checkPermission();
+    permission = await _geolocatorPlatform.checkPermission();
 
     if (permission == LocationPermission.deniedForever) {
       // Permissions are denied forever, handle appropriately.
@@ -253,7 +265,8 @@ class _UploadState extends State<Upload>
       // your App should show an explanatory UI now.
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Location permissions are denied.'),
+          content: const Text(
+              'Location permissions are denied. Allow and try again.'),
           backgroundColor: Theme.of(context).errorColor,
         ),
       );
@@ -263,11 +276,16 @@ class _UploadState extends State<Upload>
   }
 
   void getUserLocation() async {
+    print('getting location');
     bool permissionEnabled = await getLocationPermissions();
 
     if (!permissionEnabled) {
       return;
     }
+
+    setState(() {
+      gettingLocation = true;
+    });
 
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
@@ -283,6 +301,10 @@ class _UploadState extends State<Upload>
     // print(completeAdress);
     String formattedAddress = '${placemark.locality}, ${placemark.country}';
     locationController.text = formattedAddress;
+
+    setState(() {
+      gettingLocation = false;
+    });
   }
 
   Scaffold buildUploadForm() {
@@ -304,15 +326,17 @@ class _UploadState extends State<Upload>
         ),
         actions: [
           TextButton(
-            child: const Text(
+            child: Text(
               'Post',
               style: TextStyle(
-                color: Colors.blueAccent,
+                color: isUploading || gettingLocation
+                    ? Colors.grey
+                    : Colors.blueAccent,
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
               ),
             ),
-            onPressed: isUploading ? null : () => handleSubmit(),
+            onPressed: isUploading || gettingLocation ? null : handleSubmit,
           ),
         ],
       ),
@@ -352,6 +376,8 @@ class _UploadState extends State<Upload>
                   hintText: 'Write a caption...',
                   border: InputBorder.none,
                 ),
+                enabled: isUploading ? false : true,
+                textCapitalization: TextCapitalization.sentences,
               ),
             ),
           ),
@@ -370,6 +396,7 @@ class _UploadState extends State<Upload>
                   hintText: 'Where was this photo taken?',
                   border: InputBorder.none,
                 ),
+                enabled: isUploading ? false : true,
               ),
             ),
           ),
@@ -377,27 +404,31 @@ class _UploadState extends State<Upload>
             width: 200,
             height: 100,
             alignment: Alignment.center,
-            child: ElevatedButton.icon(
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(Colors.blue),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+            child: gettingLocation
+                ? circularProgress()
+                : ElevatedButton.icon(
+                    style: ButtonStyle(
+                      backgroundColor: isUploading
+                          ? MaterialStateProperty.all<Color>(Colors.grey)
+                          : MaterialStateProperty.all<Color>(Colors.deepOrange),
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                    label: const Text(
+                      'Use Current Location',
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.my_location,
+                      color: Colors.white,
+                    ),
+                    onPressed: isUploading ? () {} : getUserLocation,
                   ),
-                ),
-              ),
-              label: const Text(
-                'Use Current Location',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
-              ),
-              icon: const Icon(
-                Icons.my_location,
-                color: Colors.white,
-              ),
-              onPressed: getUserLocation,
-            ),
           ),
         ],
       ),
@@ -409,6 +440,11 @@ class _UploadState extends State<Upload>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return file!.path != '' ? buildUploadForm() : buildSplashScreen();
+    return file!.path != ''
+        ? buildUploadForm()
+        : buildSplashScreen(
+            // context,
+            // selectImage(context),
+            );
   }
 }

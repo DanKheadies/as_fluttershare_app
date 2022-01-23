@@ -3,70 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import './home.dart';
-import './post_screen.dart';
-import './profile.dart';
-import '../widgets/progress.dart';
-import '../widgets/header.dart';
-
-class ActivityFeed extends StatefulWidget {
-  const ActivityFeed({Key? key}) : super(key: key);
-
-  @override
-  _ActivityFeedState createState() => _ActivityFeedState();
-}
-
-class _ActivityFeedState extends State<ActivityFeed> {
-  late Future<List<ActivityFeedItem>> userNotifications;
-
-  @override
-  void initState() {
-    super.initState();
-    userNotifications = getActivityFeed();
-  }
-
-  Future<List<ActivityFeedItem>> getActivityFeed() async {
-    QuerySnapshot snapshot = await activityFeedRef
-        .doc(currentUser.id)
-        .collection('feedItems')
-        .orderBy(
-          'timestamp',
-          descending: true,
-        )
-        .limit(50)
-        .get();
-
-    List<ActivityFeedItem> feedItems = [];
-
-    for (var item in snapshot.docs) {
-      feedItems.add(ActivityFeedItem.fromDocument(item));
-    }
-
-    return feedItems;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.orange,
-      appBar: header(
-        context,
-        titleText: 'Activity Feed',
-      ),
-      body: FutureBuilder<List<ActivityFeedItem>>(
-        future: userNotifications,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return circularProgress();
-          }
-          return ListView(
-            children: snapshot.data!,
-          );
-        },
-      ),
-    );
-  }
-}
+import '../screens/post_screen.dart';
+import '../screens/profile_screen.dart';
 
 class ActivityFeedItem extends StatefulWidget {
   const ActivityFeedItem({
@@ -127,8 +65,9 @@ class _ActivityFeedItemState extends State<ActivityFeedItem> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile(
+        builder: (context) => ProfileScreen(
           profileId: profileId,
+          hasBack: true,
         ),
       ),
     ).then((value) => setState(() {}));

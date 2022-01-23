@@ -8,12 +8,14 @@ class PostTile extends StatelessWidget {
   const PostTile({
     Key? key,
     required this.post,
+    required this.updateTiles,
   }) : super(key: key);
 
   final Post post;
+  final Function updateTiles;
 
-  void showPost(context) {
-    Navigator.push(
+  void showPost(context) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PostScreen(
@@ -22,6 +24,9 @@ class PostTile extends StatelessWidget {
         ),
       ),
     );
+    if (result == 'delete') {
+      updateTiles();
+    }
   }
 
   @override

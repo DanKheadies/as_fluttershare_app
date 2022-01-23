@@ -2,17 +2,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
-import './screens/home.dart';
-import './screens/profile.dart';
-
-Future<void> _messageHandler(RemoteMessage message) async {
-  print('background message ${message.notification!.body}');
-}
+import './screens/home_screen.dart';
+import './screens/post_screen.dart';
+import './screens/profile_screen.dart';
+import './services/firebase_messaging.dart';
+import './services/google_signin.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(_messageHandler);
+  FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
   runApp(const MyApp());
 }
 
@@ -39,10 +37,17 @@ class MyApp extends StatelessWidget {
               secondary: Colors.teal,
             ),
           ),
-          home: const Home(),
+          home: const HomeScreen(),
           routes: {
-            Home.id: (ctx) => const Home(),
-            Profile.id: (ctx) => Profile(profileId: currentUser.id),
+            HomeScreen.id: (ctx) => const HomeScreen(),
+            PostScreen.id: (ctx) => PostScreen(
+                  postId: '',
+                  userId: currentUser.id,
+                ),
+            ProfileScreen.id: (ctx) => ProfileScreen(
+                  profileId: currentUser.id,
+                  hasBack: false,
+                ),
           },
         );
       },

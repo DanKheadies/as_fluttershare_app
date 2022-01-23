@@ -1,21 +1,21 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:animator/animator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import './progress.dart';
 import '../models/user.dart';
-import '../screens/comments.dart';
-import '../screens/home.dart';
-import '../screens/profile.dart';
+import '../screens/comments_screen.dart';
+import '../screens/profile_screen.dart';
+import '../services/firebase_firestore.dart';
+import '../services/google_signin.dart';
 import '../widgets/custom_image.dart';
 
+//ignore: must_be_immutable
 class Post extends StatefulWidget {
-  const Post({
+  Post({
     Key? key,
     required this.postId,
     required this.ownerId,
@@ -24,6 +24,8 @@ class Post extends StatefulWidget {
     required this.description,
     required this.mediaUrl,
     required this.likes,
+    required this.isPostScreen,
+    required this.refreshPosts,
   }) : super(key: key);
 
   final String postId;
@@ -33,6 +35,8 @@ class Post extends StatefulWidget {
   final String description;
   final String mediaUrl;
   final dynamic likes;
+  late bool isPostScreen;
+  late Function refreshPosts;
 
   factory Post.fromDocument(DocumentSnapshot doc) {
     return Post(
@@ -43,6 +47,8 @@ class Post extends StatefulWidget {
       description: doc['description'],
       mediaUrl: doc['mediaUrl'],
       likes: doc['likes'],
+      isPostScreen: false,
+      refreshPosts: () {},
     );
   }
 
@@ -51,13 +57,11 @@ class Post extends StatefulWidget {
       return 0;
     }
     int count = 0;
-
     for (var like in likes.values) {
       if (like) {
         count += 1;
       }
     }
-
     return count;
   }
 
@@ -66,8 +70,11 @@ class Post extends StatefulWidget {
 }
 
 class _PostState extends State<Post> {
+  bool isDeleting = false;
   bool isLiked = false;
+  bool isPostScreen = false;
   bool showHeart = false;
+  int commentCount = 0;
   int likeCount = 0;
   Map likes = {};
   String currentUserId = '';
@@ -92,7 +99,9 @@ class _PostState extends State<Post> {
       likeCount = widget.getLikeCount(likes);
       isLiked =
           likes[currentUser.id] != null && likes[currentUser.id] ? true : false;
+      isPostScreen = widget.isPostScreen;
     });
+    getCommentCount();
     super.initState();
   }
 
@@ -100,11 +109,12 @@ class _PostState extends State<Post> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile(
+        builder: (context) => ProfileScreen(
           profileId: profileId,
+          hasBack: true,
         ),
       ),
-    ).then((value) => setState(() {}));
+    );
   }
 
   FutureBuilder buildPostHeader() {
@@ -148,73 +158,45 @@ class _PostState extends State<Post> {
     );
   }
 
-  handleDeletePost(BuildContext parentContext) {
-    return showDialog(
-      context: parentContext,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Remove this post?'),
-          actions: [
-            TextButton(
-              child: const Text(
-                'Delete',
-                style: TextStyle(
-                  color: Colors.red,
-                ),
-              ),
-              onPressed: () {
-                deletePost();
-                // Navigator.pushReplacementNamed(
-                //   context,
-                //   Home.id,
-                // );
-                Navigator.pop(context);
-                // Navigator.pop(context, true);
-              },
-            ),
-            TextButton(
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Colors.grey,
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        );
-        // return SimpleDialog(
-        //   title: const Text('Remove this post?'),
-        //   children: [
-        //     SimpleDialogOption(
-        //       child: const Text(
-        //         'Delete',
-        //         style: TextStyle(
-        //           color: Colors.red,
-        //         ),
-        //       ),
-        //       onPressed: () {
-        //         deletePost();
-        //         // Navigator.pushReplacementNamed(
-        //         //   context,
-        //         //   // Profile.id,
-        //         //   Home.id,
-        //         // ).then((val) => setState(() {}));
-        //         Navigator.pop(context);
-        //         Navigator.pop(context, true);
-        //       },
-        //     ),
-        //     SimpleDialogOption(
-        //       child: const Text('Cancel'),
-        //       onPressed: () => Navigator.pop(context),
-        //     ),
-        //   ],
-        // );
-      },
-    );
+  Future handleDeletePost(BuildContext parentContext) async {
+    return isDeleting
+        ? circularProgress()
+        : showDialog(
+            context: parentContext,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Remove this post?'),
+                actions: [
+                  TextButton(
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: Colors.red,
+                      ),
+                    ),
+                    onPressed: deletePost,
+                  ),
+                  TextButton(
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    // onPressed: () => widget.refreshPosts(),
+                  ),
+                ],
+              );
+            },
+          );
   }
 
   void deletePost() async {
+    setState(() {
+      isDeleting = true;
+    });
+
     postsRef.doc(ownerId).collection('userPosts').doc(postId).get().then((doc) {
       if (doc.exists) {
         doc.reference.delete();
@@ -246,6 +228,19 @@ class _PostState extends State<Post> {
         doc.reference.delete();
       }
     }
+
+    setState(() {
+      isDeleting = false;
+    });
+
+    print('deleting');
+    if (isPostScreen) {
+      print('is post screen');
+      Navigator.pop(context);
+    }
+    Navigator.pop(context, 'delete');
+    print('did pop');
+    widget.refreshPosts();
   }
 
   void handleLikePost() {
@@ -295,7 +290,7 @@ class _PostState extends State<Post> {
       'mediaUrl': mediaUrl,
       'ownerId': ownerId,
       'postId': postId,
-      'timestamp': timestamp,
+      'timestamp': getNow(),
       'type': 'like',
       'userId': currentUser.id,
       'userProfileImg': currentUser.photoUrl,
@@ -318,6 +313,15 @@ class _PostState extends State<Post> {
       }
     });
     // }
+  }
+
+  Future<void> getCommentCount() async {
+    QuerySnapshot snapshot =
+        await commentsRef.doc(widget.postId).collection('comments').get();
+
+    setState(() {
+      commentCount = snapshot.docs.length;
+    });
   }
 
   GestureDetector buildPostImage() {
@@ -376,17 +380,20 @@ class _PostState extends State<Post> {
                 right: 20,
               ),
             ),
-            GestureDetector(
-              onTap: () => showComments(
+            TextButton.icon(
+              icon: Icon(
+                Icons.chat,
+                size: 28,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              label: Text(
+                '$commentCount',
+              ),
+              onPressed: () => showComments(
                 context,
                 postId: postId,
                 ownerId: ownerId,
                 mediaUrl: mediaUrl,
-              ),
-              child: Icon(
-                Icons.chat,
-                size: 28,
-                color: Colors.blue[900],
               ),
             ),
           ],
@@ -451,7 +458,7 @@ void showComments(
   required String mediaUrl,
 }) {
   Navigator.push(context, MaterialPageRoute(builder: (context) {
-    return Comments(
+    return CommentsScreen(
       postId: postId,
       postOwnerId: ownerId,
       postMediaUrl: mediaUrl,

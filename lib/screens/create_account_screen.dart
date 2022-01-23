@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 import '../widgets/header.dart';
 
-class CreateAccount extends StatefulWidget {
-  const CreateAccount({Key? key}) : super(key: key);
+class CreateAccountScreen extends StatefulWidget {
+  const CreateAccountScreen({Key? key}) : super(key: key);
 
   @override
-  _CreateAccountState createState() => _CreateAccountState();
+  _CreateAccountScreenState createState() => _CreateAccountScreenState();
 }
 
-class _CreateAccountState extends State<CreateAccount> {
+class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool isSubmitting = false;
   final _formKey = GlobalKey<FormState>();
   String username = '';

@@ -1,14 +1,14 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
-import './home.dart';
+import '../services/firebase_firestore.dart';
+import '../services/google_signin.dart';
+import '../widgets/comment.dart';
 import '../widgets/progress.dart';
 import '../widgets/header.dart';
 
-class Comments extends StatefulWidget {
-  const Comments({
+class CommentsScreen extends StatefulWidget {
+  const CommentsScreen({
     Key? key,
     required this.postId,
     required this.postOwnerId,
@@ -20,10 +20,10 @@ class Comments extends StatefulWidget {
   final String postMediaUrl;
 
   @override
-  _CommentsState createState() => _CommentsState();
+  _CommentsScreenState createState() => _CommentsScreenState();
 }
 
-class _CommentsState extends State<Comments> {
+class _CommentsScreenState extends State<CommentsScreen> {
   String postId = '';
   String postOwnerId = '';
   String postMediaUrl = '';
@@ -68,7 +68,7 @@ class _CommentsState extends State<Comments> {
     commentsRef.doc(postId).collection('comments').add({
       'username': currentUser.username,
       'comment': commentController.text,
-      'timestamp': timestamp,
+      'timestamp': getNow(),
       'avatarUrl': currentUser.photoUrl,
       'userId': currentUser.id,
     });
@@ -79,7 +79,7 @@ class _CommentsState extends State<Comments> {
         'mediaUrl': postMediaUrl,
         'ownerId': postOwnerId,
         'postId': postId,
-        'timestamp': timestamp,
+        'timestamp': getNow(),
         'type': 'comment',
         'username': currentUser.username,
         'userId': currentUser.id,
@@ -95,6 +95,8 @@ class _CommentsState extends State<Comments> {
       appBar: header(
         context,
         titleText: 'Comments',
+        hasLeading: true,
+        leadingParam: 'comment',
       ),
       body: Column(
         children: [
@@ -116,53 +118,6 @@ class _CommentsState extends State<Comments> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class Comment extends StatelessWidget {
-  const Comment({
-    Key? key,
-    required this.username,
-    required this.userId,
-    required this.avatarUrl,
-    required this.comment,
-    required this.timestamp,
-  }) : super(key: key);
-
-  final String username;
-  final String userId;
-  final String avatarUrl;
-  final String comment;
-  final Timestamp timestamp;
-
-  factory Comment.fromDocument(DocumentSnapshot doc) {
-    return Comment(
-      username: doc['username'],
-      userId: doc['userId'],
-      avatarUrl: doc['avatarUrl'],
-      comment: doc['comment'],
-      timestamp: doc['timestamp'],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          title: Text(comment),
-          leading: CircleAvatar(
-            backgroundImage: CachedNetworkImageProvider(avatarUrl),
-          ),
-          subtitle: Text(
-            timeago.format(
-              timestamp.toDate(),
-            ),
-          ),
-        ),
-        const Divider(),
-      ],
     );
   }
 }

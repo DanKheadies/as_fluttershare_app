@@ -1,23 +1,22 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttershare_app/widgets/progress.dart';
 
-import './activity_feed.dart';
-import './home.dart';
-import './profile.dart';
 import '../models/user.dart';
+import '../services/firebase_firestore.dart';
 import '../widgets/progress.dart';
+import '../widgets/user_result.dart';
 
-class Search extends StatefulWidget {
-  const Search({Key? key}) : super(key: key);
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({Key? key}) : super(key: key);
 
   @override
-  _SearchState createState() => _SearchState();
+  _SearchScreenState createState() => _SearchScreenState();
 }
 
-class _SearchState extends State<Search> with AutomaticKeepAliveClientMixin {
+class _SearchScreenState extends State<SearchScreen>
+    with AutomaticKeepAliveClientMixin {
   bool hasResults = false;
   late Future<QuerySnapshot> searchResultsFuture;
   TextEditingController searchController = TextEditingController();
@@ -109,10 +108,6 @@ class _SearchState extends State<Search> with AutomaticKeepAliveClientMixin {
           return circularProgress();
         }
         List<UserResult> searchResults = [];
-        // snapshot.data?.docs.forEach((doc) {
-        //   User user = User.fromDocument(doc);
-        //   searchResults.add(Text(user.username));
-        // });
         for (var doc in snapshot.data!.docs) {
           User user = User.fromDocument(doc);
           UserResult searchResult = UserResult(user);
@@ -134,88 +129,6 @@ class _SearchState extends State<Search> with AutomaticKeepAliveClientMixin {
       appBar: buildSearchField(),
       body: !hasResults ? buildNoContent() : buildSearchResults(),
       backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-    );
-  }
-}
-
-class UserResult extends StatefulWidget {
-  late User user;
-
-  UserResult(this.user);
-
-  @override
-  State<UserResult> createState() => _UserResultState();
-}
-
-class _UserResultState extends State<UserResult> {
-  Future<void> showProfile(BuildContext context,
-      {required String profileId}) async {
-    final derp = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Profile(
-          profileId: profileId,
-        ),
-      ),
-    ).then((val) => {
-          print(val),
-          setState(() {}),
-        });
-    print('search derp');
-    print(derp);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () => showProfile(
-              context,
-              profileId: widget.user.id,
-            ),
-            // onTap: () => ActivityFeedItem(
-            //   commentData: '',
-            //   mediaUrl: '',
-            //   postId: '',
-            //   timestamp: Timestamp.now(),
-            //   type: '',
-            //   userId: user.id,
-            //   userProfileImg: '',
-            //   username: '',
-            // ).showProfile(
-            //   context,
-            //   profileId: user.id,
-            // ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.grey,
-                backgroundImage:
-                    CachedNetworkImageProvider(widget.user.photoUrl),
-              ),
-              title: Text(
-                widget.user.displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Text(
-                widget.user.username,
-                style: const TextStyle(
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          const Divider(
-            height: 2,
-            color: Colors.white54,
-          ),
-        ],
-      ),
     );
   }
 }

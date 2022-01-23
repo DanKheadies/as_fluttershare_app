@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import './home.dart';
+import '../services/firebase_firestore.dart';
 import '../widgets/header.dart';
 import '../widgets/post.dart';
 import '../widgets/progress.dart';
 
 class PostScreen extends StatelessWidget {
+  static const String id = 'post';
+
   const PostScreen({
     Key? key,
     required this.userId,
@@ -25,11 +27,14 @@ class PostScreen extends StatelessWidget {
           return circularProgress();
         }
         Post post = Post.fromDocument(snapshot.data!);
+        post.isPostScreen = true;
         return Center(
           child: Scaffold(
             appBar: header(
               context,
               titleText: post.description,
+              hasLeading: true,
+              leadingParam: 'post_screen',
             ),
             body: ListView(
               children: [
