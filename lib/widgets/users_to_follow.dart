@@ -9,6 +9,7 @@ import '../widgets/user_result.dart';
 
 Widget buildUsersToFollow(
   List<String> followingList,
+  Function updateFeed,
 ) {
   return StreamBuilder<QuerySnapshot>(
     stream: usersRef
@@ -34,7 +35,7 @@ Widget buildUsersToFollow(
         } else if (isFollowingUser) {
           // print('is following user');
         } else {
-          UserResult userResult = UserResult(user);
+          UserResult userResult = UserResult(user, updateFeed);
           userResults.add(userResult);
         }
       }

@@ -9,8 +9,8 @@ import '../widgets/unAuth.dart';
 
 // TODOS:
 // Push notifications on iOS
-// Refresthing a Screen:
-//  - Activity Feed after (un)following someone (and going back)
+// Clean up Search / Firebase query
+// Infinite Profile -> Post -> Profile -> blackhole
 
 class HomeScreen extends StatefulWidget {
   static const String id = 'home';

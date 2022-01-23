@@ -228,6 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
         titleText: 'Profile',
         hasLeading: widget.hasBack,
+        leadingParam: 'profile',
       ),
       body: RefreshIndicator(
         onRefresh: () => getProfilePosts(),

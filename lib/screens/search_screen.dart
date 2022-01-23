@@ -110,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen>
         List<UserResult> searchResults = [];
         for (var doc in snapshot.data!.docs) {
           User user = User.fromDocument(doc);
-          UserResult searchResult = UserResult(user);
+          UserResult searchResult = UserResult(user, () {});
           searchResults.add(searchResult);
         }
         return ListView(

@@ -30,13 +30,15 @@ void firebaseMessagesSetup(
     //         ],
     //       );
     //     });
-    print('on message: $message\n');
-    final String receipientId = message.data['recipient'];
+
+    // print('on message: $message\n');
+    final String? receipientId = message.data['recipient'];
+    // print(receipientId);
     final String? body = message.notification!.body;
-    final dynamic values = message.data.values;
-    print(values);
-    print(receipientId);
-    print(currentUser.id);
+    // print(body);
+    // final dynamic values = message.data.values;
+    // print(values);
+    // print(currentUser.id);
     if (receipientId == currentUser.id) {
       print('Notification shown!');
       ScaffoldMessenger.of(context).showSnackBar(

@@ -75,12 +75,23 @@ class _TimelineScreenState extends State<TimelineScreen> {
     if (gettingData) {
       return circularProgress();
     } else if (posts.isEmpty) {
-      return buildUsersToFollow(followingList);
+      return buildUsersToFollow(followingList, toggleData);
     } else {
+      for (var post in posts) {
+        post.refreshPosts = () {
+          toggleData();
+        };
+      }
       return ListView(
         children: posts,
       );
     }
+  }
+
+  Future<void> toggleData() async {
+    getTimeline();
+    getFollowing();
+    getTimeline();
   }
 
   @override
@@ -91,7 +102,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         isAppTitle: true,
       ),
       body: RefreshIndicator(
-        onRefresh: () => getTimeline(),
+        onRefresh: () => toggleData(),
         child: buildTimeline(),
       ),
     );

@@ -6,8 +6,12 @@ import '../screens/profile_screen.dart';
 
 class UserResult extends StatefulWidget {
   late final User user;
+  final Function updateFeed;
 
-  UserResult(this.user);
+  UserResult(
+    this.user,
+    this.updateFeed,
+  );
 
   @override
   State<UserResult> createState() => _UserResultState();
@@ -16,7 +20,7 @@ class UserResult extends StatefulWidget {
 class _UserResultState extends State<UserResult> {
   Future<void> showProfile(BuildContext context,
       {required String profileId}) async {
-    Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProfileScreen(
@@ -25,6 +29,9 @@ class _UserResultState extends State<UserResult> {
         ),
       ),
     );
+    if (result == 'profile') {
+      widget.updateFeed();
+    }
   }
 
   @override

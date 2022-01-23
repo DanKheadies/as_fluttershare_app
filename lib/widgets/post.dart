@@ -105,8 +105,8 @@ class _PostState extends State<Post> {
     super.initState();
   }
 
-  void showProfile(BuildContext context, {required String profileId}) {
-    Navigator.push(
+  void showProfile(BuildContext context, {required String profileId}) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ProfileScreen(
@@ -115,6 +115,9 @@ class _PostState extends State<Post> {
         ),
       ),
     );
+    if (result == 'profile') {
+      widget.refreshPosts();
+    }
   }
 
   FutureBuilder buildPostHeader() {
@@ -233,13 +236,10 @@ class _PostState extends State<Post> {
       isDeleting = false;
     });
 
-    print('deleting');
     if (isPostScreen) {
-      print('is post screen');
       Navigator.pop(context);
     }
     Navigator.pop(context, 'delete');
-    print('did pop');
     widget.refreshPosts();
   }
 
@@ -283,36 +283,36 @@ class _PostState extends State<Post> {
 
   void addLikeToActivityFeed() {
     bool isNotPostOwner = currentUserId != ownerId;
-    // if (isNotPostOwner) {
-    print('like');
-    activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
-      'commentData': '',
-      'mediaUrl': mediaUrl,
-      'ownerId': ownerId,
-      'postId': postId,
-      'timestamp': getNow(),
-      'type': 'like',
-      'userId': currentUser.id,
-      'userProfileImg': currentUser.photoUrl,
-      'username': currentUser.username,
-    });
-    // }
+    if (isNotPostOwner) {
+      print('like');
+      activityFeedRef.doc(ownerId).collection('feedItems').doc(postId).set({
+        'commentData': '',
+        'mediaUrl': mediaUrl,
+        'ownerId': ownerId,
+        'postId': postId,
+        'timestamp': getNow(),
+        'type': 'like',
+        'userId': currentUser.id,
+        'userProfileImg': currentUser.photoUrl,
+        'username': currentUser.username,
+      });
+    }
   }
 
   void removeLikeFromActivityFeed() {
     bool isNotPostOwner = currentUserId != ownerId;
-    // if (isNotPostOwner) {
-    activityFeedRef
-        .doc(ownerId)
-        .collection('feedItems')
-        .doc(postId)
-        .get()
-        .then((doc) {
-      if (doc.exists) {
-        doc.reference.delete();
-      }
-    });
-    // }
+    if (isNotPostOwner) {
+      activityFeedRef
+          .doc(ownerId)
+          .collection('feedItems')
+          .doc(postId)
+          .get()
+          .then((doc) {
+        if (doc.exists) {
+          doc.reference.delete();
+        }
+      });
+    }
   }
 
   Future<void> getCommentCount() async {
