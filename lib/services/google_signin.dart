@@ -116,7 +116,7 @@ Future<void> createUserInFirebase(
   currentUser = User.fromDocument(doc);
 
   firebaseMessaging.getToken().then((token) {
-    // print('Firebase Messaging Token: $token\n');
+    print('Firebase Messaging Token: $token\n');
     usersRef.doc(user!.id).update({'androidNotificationToken': token});
   });
   firebaseMessaging.onTokenRefresh.listen((token) {
