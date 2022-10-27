@@ -318,9 +318,11 @@ class _PostState extends State<Post> {
     QuerySnapshot snapshot =
         await commentsRef.doc(widget.postId).collection('comments').get();
 
-    setState(() {
-      commentCount = snapshot.docs.length;
-    });
+    int _commentCount = snapshot.docs.length;
+
+    // setState(() {
+    //   commentCount = _commentCount;
+    // });
   }
 
   GestureDetector buildPostImage() {

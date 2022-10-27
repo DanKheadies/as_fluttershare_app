@@ -34,7 +34,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       gettingData = true;
     });
     getTimeline();
-    getFollowing();
+    // getFollowing();
     super.initState();
   }
 
